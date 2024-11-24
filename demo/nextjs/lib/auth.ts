@@ -20,6 +20,8 @@ import { customSession } from "./auth/plugins/custom-session";
 import { PostgresDialect } from 'kysely'
 import { Pool } from "pg"
 import { v4 as uuidv4 } from 'uuid';
+import { advance } from "@react-three/fiber";
+import { Schema } from "zod";
 
 const from = process.env.BETTER_AUTH_EMAIL || "delivered@resend.dev";
 const to = process.env.TEST_EMAIL || "";
@@ -38,8 +40,14 @@ export const auth = betterAuth({
 	database: {
 		dialect: db,
 		type: "postgres",
-		generateId:()=>{return uuidv4()} 
+		
 	},
+	user: {
+		modelName: "users",
+		fields: {
+		  image: "picture",
+		} 
+	 },
 	session: {
 		cookieCache: {
 			enabled: true,
@@ -110,6 +118,28 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		organization({
+			schema:{
+				member:{
+					modelName: "tenant_users",
+					fields:{
+						organizationId:"tenant_id",
+						userId:"user_id",
+						createdAt:"created"
+					}
+				},
+				organization:{
+					modelName: "tenants",
+					fields:{
+						createdAt:"created"
+					}
+				},
+				invitation:{
+					modelName: "invitation",
+					fields:{
+						organizationId:"tenant_id"
+					}
+				}
+			},
 			async sendInvitationEmail(data) {
 				const res = await resend.emails.send({
 					from,
